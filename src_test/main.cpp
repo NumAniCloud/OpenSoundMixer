@@ -13,6 +13,12 @@ void*(*Osm_Manager_CreateSound)(void*, void*, int32_t, bool);
 int32_t(*Osm_Manager_Play)(void*, void*);
 void(*Osm_Manager_Stop)(void*, int32_t);
 int(*Osm_Sound_Release)(void*);
+void(*Osm_Manager_Pause)(void*, int32_t);
+void(*Osm_Manager_Resume)(void*, int32_t);
+void(*Osm_Manager_SetVolume)(void*, int32_t, float);
+void(*Osm_Manager_FadeIn)(void*, int32_t, float);
+void(*Osm_Manager_FadeOut)(void*, int32_t, float);
+void(*Osm_Manager_Fade)(void*, int32_t, float, float);
 
 void CheckDllFunction(void* function)
 {
@@ -50,6 +56,24 @@ void LoadDll()
 
 	Osm_Sound_Release = (int(*)(void*))(::GetProcAddress(hDll, "Osm_Sound_Release"));
 	if (!Osm_Sound_Release) throw 1;
+
+	Osm_Manager_Pause = (void(*)(void*, int32_t))(::GetProcAddress(hDll, "Osm_Manager_Pause"));
+	if (!Osm_Manager_Pause) throw 1;
+
+	Osm_Manager_Resume = (void(*)(void*, int32_t))(::GetProcAddress(hDll, "Osm_Manager_Resume"));
+	if (!Osm_Manager_Resume) throw 1;
+
+	Osm_Manager_SetVolume = (void(*)(void*, int32_t, float))(::GetProcAddress(hDll, "Osm_Manager_SetVolume"));
+	if (!Osm_Manager_SetVolume) throw 1;
+
+	Osm_Manager_FadeIn = (void(*)(void*, int32_t, float))(::GetProcAddress(hDll, "Osm_Manager_FadeIn"));
+	if (!Osm_Manager_FadeIn) throw 1;
+
+	Osm_Manager_FadeOut = (void(*)(void*, int32_t, float))(::GetProcAddress(hDll, "Osm_Manager_FadeOut"));
+	if (!Osm_Manager_FadeOut) throw 1;
+
+	Osm_Manager_Fade = (void(*)(void*, int32_t, float, float))(::GetProcAddress(hDll, "Osm_Manager_Fade"));
+	if (!Osm_Manager_Fade) throw 1;
 }
 
 std::wstring ToWide(const char* pText);
@@ -72,7 +96,7 @@ void Run()
 
 	{
 		FILE* fp = nullptr;
-		fopen_s(&fp, "bgm1.ogg", "rb");
+		fopen_s(&fp, "Home.ogg", "rb");
 
 		if (fp == nullptr)
 		{
@@ -92,13 +116,17 @@ void Run()
 	}
 
 	auto id = Osm_Manager_Play(manager, sound);
+	Osm_Manager_FadeIn(manager, id, 3);
 
-	Sleep(2000);
-	Osm_Manager_Stop(manager, id);
+	Sleep(6000);
+	Osm_Manager_FadeOut(manager, id, 3);
+	Sleep(3000);
 
 	Osm_Manager_Finalize(manager);
 	Osm_Sound_Release(sound);
 	Osm_Manager_Release(manager);
+
+	printf("finish\n");
 }
 
 void main(int argc, char **argv)
