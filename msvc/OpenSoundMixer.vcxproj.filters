@@ -24,6 +24,7 @@
     <ClCompile Include="..\src\Filter\osm.Panner.cpp">
       <Filter>Filter</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\dll.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\OpenSoundMixer.h" />
@@ -50,6 +51,7 @@
     <ClInclude Include="..\src\Filter\osm.Panner.h">
       <Filter>Filter</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\dll.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Decorder">

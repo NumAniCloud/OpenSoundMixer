@@ -1,137 +1,83 @@
-
-#include <vector>
-#include <string>
-
-#ifdef _WIN32
 #include <windows.h>
-#else
-#include <unistd.h>
-#endif
+#include <iostream>
+#include <exception>
+#include <cstdint>
+#include <vector>
 
-#ifdef _WIN64
+HINSTANCE hDll;
+void*(*Osm_Manager_Create)();
+bool(*Osm_Manager_Initialize)(void*);
+void(*Osm_Manager_Finalize)(void*);
+int(*Osm_Manager_Release)(void*);
+void*(*Osm_Manager_CreateSound)(void*, void*, int32_t, bool);
+int32_t(*Osm_Manager_Play)(void*, void*);
+void(*Osm_Manager_Stop)(void*, int32_t);
+int(*Osm_Sound_Release)(void*);
 
-#if _DEBUG
-#pragma comment(lib,"x64/Debug/libogg_static.lib")
-#pragma comment(lib,"x64/Debug/libvorbis_static.lib")
-#pragma comment(lib,"x64/Debug/libvorbisfile_static.lib")
-#pragma comment(lib,"x64/Debug/OpenSoundMixer.lib")
-#else
-#pragma comment(lib,"x64/Release/libogg_static.lib")
-#pragma comment(lib,"x64/Release/libvorbis_static.lib")
-#pragma comment(lib,"x64/Release/libvorbisfile_static.lib")
-#pragma comment(lib,"x64/Release/OpenSoundMixer.lib")
-#endif
-
-#else
-
-#if _DEBUG
-#pragma comment(lib,"x86/Debug/libogg_static.lib")
-#pragma comment(lib,"x86/Debug/libvorbis_static.lib")
-#pragma comment(lib,"x86/Debug/libvorbisfile_static.lib")
-#pragma comment(lib,"x86/Debug/OpenSoundMixer.lib")
-#else
-#pragma comment(lib,"x86/Release/libogg_static.lib")
-#pragma comment(lib,"x86/Release/libvorbis_static.lib")
-#pragma comment(lib,"x86/Release/libvorbisfile_static.lib")
-#pragma comment(lib,"x86/Release/OpenSoundMixer.lib")
-#endif
-
-#endif
-
-#include "OpenSoundMixer.h"
-
-#ifdef _WIN32
-inline void Sleep_(int32_t ms)
+void CheckDllFunction(void* function)
 {
-	::Sleep(ms);
-}
-#else
-inline void Sleep_(int32_t ms)
-{
-	usleep(1000 * ms);
-}
-#endif
-
-template <class T>
-void SafeAddRef(T& t)
-{
-	if (t != NULL)
+	if (!function)
 	{
-		t->AddRef();
+		throw 1;
 	}
 }
 
-template <class T>
-void SafeRelease(T& t)
+void LoadDll()
 {
-	if (t != NULL)
-	{
-		t->Release();
-		t = NULL;
-	}
+	hDll = ::LoadLibraryEx("OpenSoundMixer.dll", NULL, 0);
+	if (!hDll) throw 0;
+
+	Osm_Manager_Create = (void*(*)())(::GetProcAddress(hDll, "Osm_Manager_Create"));
+	if (!Osm_Manager_Create) throw 1;
+
+	Osm_Manager_Initialize = (bool(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Initialize"));
+	if (!Osm_Manager_Initialize) throw 1;
+
+	Osm_Manager_Finalize = (void(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Finalize"));
+	if (!Osm_Manager_Finalize) throw 1;
+
+	Osm_Manager_Release = (int(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Release"));
+	if (!Osm_Manager_Release) throw 1;
+
+	Osm_Manager_CreateSound = (void*(*)(void*, void*, int32_t, bool))(::GetProcAddress(hDll, "Osm_Manager_CreateSound"));
+	if (!Osm_Manager_CreateSound) throw 1;
+
+	Osm_Manager_Play = (int32_t(*)(void*, void*))(::GetProcAddress(hDll, "Osm_Manager_Play"));
+	if (!Osm_Manager_Play) throw 1;
+
+	Osm_Manager_Stop = (void(*)(void*, int32_t))(::GetProcAddress(hDll, "Osm_Manager_Stop"));
+	if (!Osm_Manager_Stop) throw 1;
+
+	Osm_Sound_Release = (int(*)(void*))(::GetProcAddress(hDll, "Osm_Sound_Release"));
+	if (!Osm_Sound_Release) throw 1;
 }
 
-
-#if _WIN32
-#include <Windows.h>
 std::wstring ToWide(const char* pText);
 void GetDirectoryName(char* dst, char* src);
-#endif
 
-int main(int argc, char **argv)
+void Run()
 {
-#if _WIN32
-	char current_path[MAX_PATH + 1];
-	GetDirectoryName(current_path, argv[0]);
-	SetCurrentDirectoryA(current_path);
-#endif
-
-	osm::Sound* staticSound = nullptr;
-	osm::Sound* streamSound = nullptr;
-
-	auto manager = osm::Manager::Create();
-
-	if( manager->Initialize() )
+	void* manager = Osm_Manager_Create();
+	if (Osm_Manager_Initialize(manager))
 	{
-		printf("Scceed in initializing manager.\n");
+		printf("initialize succeeded\n");
 	}
 	else
 	{
-		printf("Failed to initialize manager.\n");
-		manager->Release();
-		return 0;
+		printf("initialize failure\n");
+		return;
 	}
+
+	void* sound = nullptr;
 
 	{
 		FILE* fp = nullptr;
-		
-#if _WIN32
-		fopen_s(&fp, "se1.wav", "rb");
-#else
-		fp = fopen("se1.wav", "rb");
-#endif
-		if (fp == nullptr) return 0;
-
-		fseek(fp, 0, SEEK_END);
-		auto size = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-
-		std::vector<uint8_t> data;
-		data.resize(size);
-		fread(data.data(), size, 1, fp);
-		fclose(fp);
-
-		staticSound = manager->CreateSound(data.data(), data.size(), true);
-	}
-
-	{
-		FILE* fp = nullptr;
-#if _WIN32
 		fopen_s(&fp, "bgm1.ogg", "rb");
-#else
-		fp = fopen("bgm1.ogg", "rb");
-#endif
-		if (fp == nullptr) return 0;
+
+		if (fp == nullptr)
+		{
+			return;
+		}
 
 		fseek(fp, 0, SEEK_END);
 		auto size = ftell(fp);
@@ -142,55 +88,47 @@ int main(int argc, char **argv)
 		fread(data.data(), size, 1, fp);
 		fclose(fp);
 
-		streamSound = manager->CreateSound(data.data(), data.size(), true);
+		sound = Osm_Manager_CreateSound(manager, data.data(), data.size(), true);
 	}
 
-	printf("Loaded resources.\n");
+	auto id = Osm_Manager_Play(manager, sound);
 
-	auto id1 = manager->Play(streamSound);
-	manager->FadeIn(id1, 3);
-	Sleep_(1000);
-	auto id2 = manager->Play(staticSound);
-	
-	while (manager->IsPlaying(id1) || manager->IsPlaying(id2))
-	{
-		Sleep_(1);
-	}
+	Sleep(2000);
+	Osm_Manager_Stop(manager, id);
 
-	/*
-	int32_t time = 0;
-	while (true)
-	{
-		if (time % 500 == 0)
-		{
-			manager->Play(streamSound);
-		}
-		Sleep_(1);
-		time++;
-	}
-	*/
-
-	manager->Finalize();
-	staticSound->Release();
-	streamSound->Release();
-	manager->Release();
-
-	return 0;
+	Osm_Manager_Finalize(manager);
+	Osm_Sound_Release(sound);
+	Osm_Manager_Release(manager);
 }
 
-
-
-#if _WIN32
-static std::wstring ToWide(const char* pText)
+void main(int argc, char **argv)
 {
-	int Len = ::MultiByteToWideChar(CP_ACP, 0, pText, -1, NULL, 0);
+	char current_path[MAX_PATH + 1];
+	GetDirectoryName(current_path, argv[0]);
+	SetCurrentDirectoryA(current_path);
 
-	wchar_t* pOut = new wchar_t[Len + 1];
-	::MultiByteToWideChar(CP_ACP, 0, pText, -1, pOut, Len);
-	std::wstring Out(pOut);
-	delete[] pOut;
+	try
+	{
+		LoadDll();
+	}
+	catch (int e)
+	{
+		if (e == 0)
+		{
+			printf("dll load error\n");
+		}
+		else if (e == 1)
+		{
+			printf("function load error\n");
+			::FreeLibrary(hDll);
+		}
+		getchar();
+		return;
+	}
 
-	return Out;
+	Run();
+	::FreeLibrary(hDll);
+	getchar();
 }
 
 void GetDirectoryName(char* dst, char* src)
@@ -213,4 +151,3 @@ void GetDirectoryName(char* dst, char* src)
 	dst[pos] = 0;
 	dst[last] = 0;
 }
-#endif
