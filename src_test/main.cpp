@@ -6,10 +6,10 @@
 
 HINSTANCE hDll;
 void*(*Osm_Manager_Create)();
-bool(*Osm_Manager_Initialize)(void*);
+int(*Osm_Manager_Initialize)(void*);
 void(*Osm_Manager_Finalize)(void*);
 int(*Osm_Manager_Release)(void*);
-void*(*Osm_Manager_CreateSound)(void*, void*, int32_t, bool);
+void*(*Osm_Manager_CreateSound)(void*, void*, int32_t, int);
 int32_t(*Osm_Manager_Play)(void*, void*);
 void(*Osm_Manager_Stop)(void*, int32_t);
 int(*Osm_Sound_Release)(void*);
@@ -30,13 +30,13 @@ void CheckDllFunction(void* function)
 
 void LoadDll()
 {
-	hDll = ::LoadLibraryEx("OpenSoundMixer.dll", NULL, 0);
+	hDll = ::LoadLibraryEx("OpenSoundMixer_core.dll", NULL, 0);
 	if (!hDll) throw 0;
 
 	Osm_Manager_Create = (void*(*)())(::GetProcAddress(hDll, "Osm_Manager_Create"));
 	if (!Osm_Manager_Create) throw 1;
 
-	Osm_Manager_Initialize = (bool(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Initialize"));
+	Osm_Manager_Initialize = (int(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Initialize"));
 	if (!Osm_Manager_Initialize) throw 1;
 
 	Osm_Manager_Finalize = (void(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Finalize"));
@@ -45,7 +45,7 @@ void LoadDll()
 	Osm_Manager_Release = (int(*)(void*))(::GetProcAddress(hDll, "Osm_Manager_Release"));
 	if (!Osm_Manager_Release) throw 1;
 
-	Osm_Manager_CreateSound = (void*(*)(void*, void*, int32_t, bool))(::GetProcAddress(hDll, "Osm_Manager_CreateSound"));
+	Osm_Manager_CreateSound = (void*(*)(void*, void*, int32_t, int))(::GetProcAddress(hDll, "Osm_Manager_CreateSound"));
 	if (!Osm_Manager_CreateSound) throw 1;
 
 	Osm_Manager_Play = (int32_t(*)(void*, void*))(::GetProcAddress(hDll, "Osm_Manager_Play"));
@@ -120,6 +120,8 @@ void Run()
 
 	Sleep(6000);
 	Osm_Manager_FadeOut(manager, id, 3);
+	Sleep(3000);
+	Osm_Manager_FadeIn(manager, id, 1);
 	Sleep(3000);
 
 	Osm_Manager_Finalize(manager);

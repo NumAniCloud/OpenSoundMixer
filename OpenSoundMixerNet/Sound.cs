@@ -17,7 +17,11 @@ namespace osm
 
 		public bool IsLoopingMode
 		{
-			get { return PInvoke.Osm_Sound_GetIsLoopingMode(unmanagedPtr_); }
+			get
+			{
+				var result = PInvoke.Osm_Sound_GetIsLoopingMode(unmanagedPtr_);
+				return result;
+			}
 			set { PInvoke.Osm_Sound_SetIsLoopingMode(unmanagedPtr_, value); }
 		}
 

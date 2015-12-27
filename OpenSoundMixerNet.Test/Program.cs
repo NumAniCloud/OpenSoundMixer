@@ -23,8 +23,9 @@ namespace OpenSoundMixerNet.Test
 			}
 
 			var sound = manager.CreateSound("bgm1.ogg");
-			sound.IsLoopingMode = true;
+			sound.IsLoopingMode = false;
 			var playback = manager.Play(sound);
+			Console.WriteLine(sound.IsLoopingMode);
 
 			Thread.Sleep(7000);
 			playback.Stop();

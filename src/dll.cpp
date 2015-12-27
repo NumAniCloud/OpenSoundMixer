@@ -13,10 +13,10 @@
 
 using namespace osm;
 
-bool Osm_Manager_Initialize(void* self)
+Bool Osm_Manager_Initialize(void* self)
 {
 	Manager* instance = (Manager*)self;
-	return instance->Initialize();
+	return instance->Initialize() ? 1 : 0;
 }
 
 void Osm_Manager_Finalize(void* self)
@@ -30,10 +30,10 @@ void* Osm_Manager_Create()
 	return (void*)osm::Manager::Create();
 }
 
-void* Osm_Manager_CreateSound(void* self, void* data, int32_t size, bool isDecompressed)
+void* Osm_Manager_CreateSound(void* self, void* data, int32_t size, Bool isDecompressed)
 {
 	Manager* instance = (Manager*)self;
-	return (void*)instance->CreateSound(data, size, isDecompressed);
+	return (void*)instance->CreateSound(data, size, isDecompressed != 0);
 }
 
 int32_t Osm_Manager_Play(void* self, void* sound)
@@ -48,10 +48,10 @@ void Osm_Manager_Stop(void* self, int32_t id)
 	instance->Stop(id);
 }
 
-bool Osm_Manager_IsPlaying(void* self, int32_t id)
+Bool Osm_Manager_IsPlaying(void* self, int32_t id)
 {
 	Manager* instance = (Manager*)self;
-	return instance->IsPlaying(id);
+	return instance->IsPlaying(id) ? 1 : 0;
 }
 
 void Osm_Manager_Pause(void* self, int32_t id)
@@ -96,16 +96,16 @@ int Osm_Manager_Release(void* self)
 	return instance->Release();
 }
 
-bool Osm_Sound_GetIsLoopingMode(void* self)
+Bool Osm_Sound_GetIsLoopingMode(void* self)
 {
 	Sound* instance = (Sound*)self;
-	return instance->GetIsLoopingMode();
+	return instance->GetIsLoopingMode() ? 1 : 0;
 }
 
-void Osm_Sound_SetIsLoopingMode(void* self, bool isLoopingMode)
+void Osm_Sound_SetIsLoopingMode(void* self, Bool isLoopingMode)
 {
 	Sound* instance = (Sound*)self;
-	instance->SetIsLoopingMode(isLoopingMode);
+	instance->SetIsLoopingMode(isLoopingMode != 0);
 }
 
 int Osm_Sound_Release(void* self)
